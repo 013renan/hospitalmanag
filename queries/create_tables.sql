@@ -83,20 +83,6 @@ CREATE TABLE  consulta (
 );
 
 
-CREATE TABLE consulta_detalhada (
-    idconsulta int NOT NULL,
-    NomePac varchar(45) NOT NULL,
-    CPF varchar(14) NOT NULL,
-    NomeM varchar(45) NOT NULL,
-    CRM int NOT NULL,
-    Data date NOT NULL,
-    HoraInCon time NOT NULL,
-    HoraFimCon time NOT NULL,
-    IdEsp int NOT NULL,
-    NomeE varchar(45) NOT NULL,
-    FormaPgto varchar(45) NOT NULL,
-    PRIMARY KEY (idconsulta)
-);
 
 
 

@@ -263,24 +263,50 @@ def main():
             if cpf:
                 cpf_busca = formatar_cpf(cpf)
                 with st.spinner("Buscando histórico..."):
+                    # Buscar dados cadastrais do paciente
+                    paciente_info = search_patient_by_cpf(cpf_busca)
+                    if not paciente_info:
+                        paciente_info = search_patient_by_cpf(''.join(filter(str.isdigit, cpf)))
+                    if paciente_info:
+                        df_paciente = make_patient_df(paciente_info)
+                        st.markdown("#### Dados do Paciente")
+                        st.dataframe(df_paciente, use_container_width=True)
+                    else:
+                        st.error("Paciente não encontrado.")
+                        return  # Interrompe caso não encontre o paciente
+
+                    # Buscar histórico de consultas
                     raw_result = search_all_consults_by_cpf_normalizada(cpf_busca)
                     if not raw_result:
                         raw_result = search_all_consults_by_cpf_normalizada(''.join(filter(str.isdigit, cpf)))
-                df = make_relatorio_df(raw_result)
-                if not df.empty:
-                    st.success(f"Histórico encontrado para CPF {cpf}")
-                    st.dataframe(df, use_container_width=True)
-                    csv = df.to_csv(index=False).encode('utf-8')
-                    st.download_button(
-                        "Exportar para CSV",
-                        csv,
-                        f"historico_consultas_{cpf}.csv",
-                        "text/csv"
-                    )
-                else:
-                    st.error("Nenhuma consulta encontrada para este CPF.")
+                    df = make_relatorio_df(raw_result)
+                    if not df.empty:
+                        st.success(f"Histórico encontrado para CPF {cpf}")
+                        st.markdown("#### Histórico de Consultas")
+                        st.dataframe(df, use_container_width=True)
+
+                        # Total de consultas
+                        total_consultas = len(df)
+                        st.info(f"**Total de consultas realizadas:** {total_consultas}")
+
+                        # Especialidade mais frequente
+                        if "Especialidade" in df.columns and not df["Especialidade"].empty:
+                            especialidade_frequente = df["Especialidade"].mode()[0]
+                            st.info(f"**Especialidade mais frequente:** {especialidade_frequente}")
+
+                        # Exportar para CSV
+                        csv = df.to_csv(index=False).encode('utf-8')
+                        st.download_button(
+                            "Exportar para CSV",
+                            csv,
+                            f"historico_consultas_{cpf}.csv",
+                            "text/csv"
+                        )
+                    else:
+                        st.error("Nenhuma consulta encontrada para este CPF.")
             else:
                 st.warning("Digite um CPF para buscar.")
+
 
 if __name__ == "__main__":
     main()
