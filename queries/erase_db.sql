@@ -1,0 +1,9 @@
+DELETE FROM hospital.diag_doenca;
+DELETE FROM hospital.diagnostico;
+DELETE FROM hospital.consulta;
+DELETE FROM hospital.exerce_esp;
+DELETE FROM hospital.agenda;
+DELETE FROM hospital.paciente;
+DELETE FROM hospital.medico;
+DELETE FROM hospital.especialidade;
+DELETE FROM hospital.doenca;
