@@ -78,3 +78,15 @@ A estrutura das tabelas está definida no arquivo `create_tables.sql`. Isso incl
 ## 📝 Licença
 
 Este projeto está sob a licença MIT. Consulte o arquivo `LICENSE` para mais informações.
+
+
+## 💻 Interface Web (Streamlit)
+
+Este projeto também inclui uma interface web feita com [Streamlit](https://streamlit.io/), permitindo visualizar ou interagir com os dados do banco de forma amigável.
+
+Para rodar a interface, use o seguinte comando:
+```bash
+python -m streamlit run interface.py
+```
+
+Certifique-se de que o ambiente virtual está ativado (se estiver usando um), e que todas as dependências estão instaladas.
