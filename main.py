@@ -12,7 +12,6 @@ def connect_to_database():
         cursor = conn.cursor()
         cursor.execute("CREATE DATABASE IF NOT EXISTS hospital")
         cursor.execute("USE hospital")
-        #cursor.execute("CREATE TABLE IF NOT EXISTS teste_tabela_teste (id INT PRIMARY KEY);")
         cursor.close()
         print("Everything set!")
         return conn
@@ -23,15 +22,15 @@ def connect_to_database():
 def criar_tabelas(conn):
     try:
         queries.create_tables(conn)
-        queries.populate_db(conn)
+        queries.populate_db(conn)  # Popula dados estáticos
         print("Database created and populated successfully!")
     except Exception as e:
         print(f"Error creating tables or populating database: {e}")
 
-def popular_banco_aleatoriamente(conn, n):
+def popular_banco_aleatoriamente(conn, n_pacientes, consultas_por_paciente):
     try:
-        popular_banco.insert_random_pacientes(conn, n)
-        popular_banco.generate_random_consultas(conn, n)
+        popular_banco.insert_random_pacientes(conn, n_pacientes)
+        popular_banco.generate_random_consultas(conn, consultas_por_paciente)
     except Exception as e:
         print(f"Error populating database randomly: {e}")
 
@@ -39,5 +38,10 @@ if __name__ == "__main__":
     conn = connect_to_database()
     if conn:
         criar_tabelas(conn)
-        #popular_banco_aleatoriamente(conn, 50)
+        
+        # CONTROLE CENTRALIZADO DA VOLUMETRIA
+        n_pacientes = 50000            # Pacientes
+        consultas_por_paciente = 10     # Consultas por paciente
+        
+        popular_banco_aleatoriamente(conn, n_pacientes, consultas_por_paciente)
         conn.close()

@@ -21,12 +21,7 @@ CREATE TABLE  medico (
   UNIQUE KEY CRM_UNIQUE (CRM)
 );
 
-CREATE TABLE  doenca (
-  iddoenca int NOT NULL,
-  nome varchar(45) NOT NULL,
-  PRIMARY KEY (iddoenca),
-  UNIQUE KEY iddoenca_UNIQUE (iddoenca)
-);
+
 
 CREATE TABLE  especialidade (
   idEsp int NOT NULL,
