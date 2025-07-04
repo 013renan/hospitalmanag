@@ -1,5 +1,3 @@
--- queries/create_tables.sql
-
 CREATE TABLE paciente (
   idpaciente int NOT NULL AUTO_INCREMENT,
   NomePac varchar(45) NOT NULL,

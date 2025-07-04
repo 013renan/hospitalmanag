@@ -1,9 +1,8 @@
-# main.py
 import queries
 import popular_banco
 import mysql.connector
 from config import DB_CONFIG
-import sys # Importar a biblioteca sys
+import sys
 
 def connect_to_database():
     """ Conecta-se ao MySQL e cria o banco de dados se não existir. """
@@ -45,21 +44,17 @@ if __name__ == "__main__":
     try:
         conn = connect_to_database()
         if conn:
-            # 1. Configura a estrutura do banco
             setup_database(conn)
             
-            # 2. Define a volumetria e popula com dados aleatórios
             n_pacientes = 50000
             consultas_por_paciente = 10
             populate_database_randomly(conn, n_pacientes, consultas_por_paciente)
             
     except Exception as e:
-        # --- CORREÇÃO ---
-        # Interrompe a execução em caso de erro fatal
         print(f"\n--- ERRO FATAL ---")
         print(f"A execução foi interrompida devido a um erro durante a configuração.")
         print(f"ERRO: {e}")
-        sys.exit(1) # Sai do programa com um código de erro
+        sys.exit(1)
         
     finally:
         if conn and conn.is_connected():

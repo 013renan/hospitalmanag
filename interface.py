@@ -1,5 +1,3 @@
-# interface.py
-
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
@@ -100,7 +98,6 @@ def main():
     st.sidebar.title("Sistema Hospitalar")
     menu_options = ["Home", "Gestão de Pacientes", "Gestão de Consultas", "Relatórios"]
     
-    # Corrige a gestão do menu para evitar erros na primeira execução
     try:
         current_index = menu_options.index(st.session_state.menu)
     except ValueError:

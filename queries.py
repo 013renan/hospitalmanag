@@ -1,5 +1,3 @@
-# queries.py
-
 import os
 import mysql.connector
 
@@ -92,9 +90,6 @@ def create_triggers(conn):
                 else:
                     raise
             
-            # --- CORREÇÃO FINAL ---
-            # Este loop consome qualquer resultado pendente na conexão,
-            # limpando-a para o próximo comando.
             while cursor.nextset():
                 pass
 

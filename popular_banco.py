@@ -24,12 +24,10 @@ def insert_random_pacientes(conn, n):
         telefone = fake.msisdn()[:11]
         endereco = fake.street_address()
         try:
-            #print(f"Inserindo: {nome}, {cpf}, {idade}, {sexo}, {telefone}, {endereco}")
             cursor.execute(
                 "INSERT INTO paciente (NomePac, CPF, Idade, Sexo, TelefonePac, Endereco) VALUES (%s, %s, %s, %s, %s, %s)",
                 (nome, cpf, idade, sexo, telefone, endereco)
             )
-            #print("Paciente inserido com sucesso")
         except Exception as e:
             print("Erro ao inserir paciente:")
             traceback.print_exc()
@@ -38,14 +36,13 @@ def insert_random_pacientes(conn, n):
 
 def generate_random_consultas(conn, consultas_por_paciente=10):
     cursor = conn.cursor()
-    # Buscar todos os pares válidos de médico e especialidade
     cursor.execute("""
         SELECT ee.CRM, m.NomeM, ee.idEsp, e.NomeE
         FROM exerce_esp ee
         JOIN medico m ON ee.CRM = m.CRM
         JOIN especialidade e ON ee.idEsp = e.idEsp
     """)
-    medico_especialidade = cursor.fetchall()  # Lista de tuplas (CRM, NomeM, idEsp, NomeE)
+    medico_especialidade = cursor.fetchall()
 
     cursor.execute("SELECT idpaciente, NomePac, Idade FROM paciente")
     pacientes = cursor.fetchall()
