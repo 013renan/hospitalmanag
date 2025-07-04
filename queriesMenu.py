@@ -1,34 +1,37 @@
-import mysql.connector
 import time
+import mysql.connector
 
-def connect_to_database():
-    conn = mysql.connector.connect(
-        host="127.0.0.1",
-        user="root",
-        password="bd123!",
-        database="hospital"
-    )
-    return conn
+def search_patient_by_cpf(conn, cpf):
+    """
+    Busca um paciente pelo CPF diretamente no banco de dados para maior eficiência.
 
-def search_patient_by_cpf(cpf):
-    conn = connect_to_database()
+    Args:
+        conn: Objeto de conexão com o banco de dados.
+        cpf: O CPF do paciente a ser buscado.
+
+    Returns:
+        Uma lista de tuplas contendo os dados do paciente encontrado, ou uma lista vazia.
+    """
     cursor = conn.cursor()
-    # Busca todos os CPFs e compara limpo
-    query = "SELECT * FROM paciente"
-    cursor.execute(query)
-    pacientes = cursor.fetchall()
-    conn.close()
-    
-    cpf_limpo = "".join(filter(str.isdigit, str(cpf)))
-    for paciente in pacientes:
-        cpf_banco = "".join(filter(str.isdigit, str(paciente[2])))  # Supondo que paciente[2] é o CPF
-        if cpf_banco == cpf_limpo:
-            return [paciente]
-    return []
+    query = "SELECT * FROM paciente WHERE CPF = %s"
+    cursor.execute(query, (cpf,))
+    result = cursor.fetchall()
+    cursor.close()
+    return result
 
+def search_consulta(conn, patient_id=None, date=None, crm=None):
+    """
+    Busca consultas com base em filtros opcionais.
 
-def search_consulta(patient_id=None, date=None, crm=None):
-    conn = connect_to_database()
+    Args:
+        conn: Objeto de conexão com o banco de dados.
+        patient_id (int, optional): ID do paciente.
+        date (str, optional): Data da consulta (formato 'YYYY-MM-DD').
+        crm (int, optional): CRM do médico.
+
+    Returns:
+        Uma lista de tuplas com os resultados da busca.
+    """
     cursor = conn.cursor()
     query = "SELECT * FROM hospital.consulta WHERE 1=1"
     params = []
@@ -48,47 +51,55 @@ def search_consulta(patient_id=None, date=None, crm=None):
     result = cursor.fetchall()
     end_time = time.time()
     
-    conn.close()
+    cursor.close()
     
-    print(f"Tempo de execução da consulta: {end_time - start_time:.10f} segundos")
+    print(f"Tempo de execução da busca de consulta: {end_time - start_time:.6f} segundos")
     return result
 
-def insert_consulta(crm, idpac, idesp, data, horaincon, horafimcon, formapgto):
-    conn = connect_to_database()
+def insert_consulta(conn, crm, idpac, idesp, data, horaincon, horafimcon, formapgto):
+    """
+    Insere uma nova consulta, buscando os dados desnormalizados para preencher a tabela.
+
+    Args:
+        conn: Objeto de conexão com o banco de dados.
+        (outros args): Dados da consulta.
+    """
     cursor = conn.cursor()
 
-    # Buscar nome do médico
-    cursor.execute("SELECT NomeM FROM medico WHERE CRM = %s", (crm,))
-    result = cursor.fetchone()
-    nome_m = result[0] if result else ""
+    try:
+        # Buscar nome do médico
+        cursor.execute("SELECT NomeM FROM medico WHERE CRM = %s", (crm,))
+        nome_m = cursor.fetchone()[0]
 
-    # Buscar nome da especialidade
-    cursor.execute("SELECT NomeE FROM especialidade WHERE idEsp = %s", (idesp,))
-    result = cursor.fetchone()
-    nome_e = result[0] if result else ""
+        # Buscar nome da especialidade
+        cursor.execute("SELECT NomeE FROM especialidade WHERE idEsp = %s", (idesp,))
+        nome_e = cursor.fetchone()[0]
 
-    # Buscar nome e idade do paciente
-    cursor.execute("SELECT NomePac, Idade FROM paciente WHERE idpaciente = %s", (idpac,))
-    result = cursor.fetchone()
-    nome_paciente = result[0] if result else ""
-    idade_paciente = result[1] if result else None
+        # Buscar nome e idade do paciente
+        cursor.execute("SELECT NomePac, Idade FROM paciente WHERE idpaciente = %s", (idpac,))
+        result = cursor.fetchone()
+        nome_paciente, idade_paciente = result if result else ("", None)
 
-    # Inserir consulta com os campos obrigatórios
-    query = """
-    INSERT INTO hospital.consulta
-    (CRM, IdPac, IdEsp, Data, HoraInCon, HoraFimCon, FormaPgto, NomeM, NomeE, NomePaciente, IdadePaciente)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    """
-    cursor.execute(query, (
-        crm, idpac, idesp, data, horaincon, horafimcon, formapgto,
-        nome_m, nome_e, nome_paciente, idade_paciente
-    ))
-    conn.commit()
-    conn.close()
-
+        # Inserir consulta com os dados completos
+        query = """
+        INSERT INTO hospital.consulta
+        (CRM, IdPac, IdEsp, Data, HoraInCon, HoraFimCon, FormaPgto, NomeM, NomeE, NomePaciente, IdadePaciente)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        cursor.execute(query, (
+            crm, idpac, idesp, data, horaincon, horafimcon, formapgto,
+            nome_m, nome_e, nome_paciente, idade_paciente
+        ))
+        conn.commit()
+    except mysql.connector.Error as e:
+        conn.rollback()
+        print(f"Erro ao inserir consulta: {e}")
+        raise
+    finally:
+        cursor.close()
                     
-def insert_patient(nomepac, cpf, idade, sexo, telefonepac, endereco):
-    conn = connect_to_database()
+def insert_patient(conn, nomepac, cpf, idade, sexo, telefonepac, endereco):
+    """Insere um novo paciente no banco de dados."""
     cursor = conn.cursor()
     query = """
     INSERT INTO hospital.paciente (NomePac, CPF, Idade, Sexo, TelefonePac, Endereco)
@@ -98,11 +109,11 @@ def insert_patient(nomepac, cpf, idade, sexo, telefonepac, endereco):
     cursor.execute(query, (nomepac, cpf, idade, sexo, telefonepac, endereco))
     conn.commit()
     end_time = time.time()
-    conn.close()
-    print(f"Tempo de execução da inserção: {end_time - start_time:.10f} segundos")
+    cursor.close()
+    print(f"Tempo de execução da inserção de paciente: {end_time - start_time:.6f} segundos")
 
-def delete_consulta(idconsulta):
-    conn = connect_to_database()
+def delete_consulta(conn, idconsulta):
+    """Deleta uma consulta do banco de dados pelo seu ID."""
     cursor = conn.cursor()
     query = "DELETE FROM hospital.consulta WHERE idconsulta = %s"
     
@@ -111,13 +122,20 @@ def delete_consulta(idconsulta):
     conn.commit()
     end_time = time.time()
     
-    conn.close()
+    cursor.close()
     
-    print(f"Tempo de execução da exclusão: {end_time - start_time:.10f} segundos")
+    print(f"Tempo de execução da exclusão: {end_time - start_time:.6f} segundos")
 
-def update_consulta_field(idconsulta, field, value):
-    conn = connect_to_database()
+def update_consulta_field(conn, idconsulta, field, value):
+    """
+    Atualiza um campo específico de uma consulta com validação para prevenir SQL Injection.
+    """
+    allowed_fields = ["Data", "HoraInCon", "HoraFimCon", "FormaPgto"]
+    if field not in allowed_fields:
+        raise ValueError(f"Campo '{field}' não é permitido para atualização.")
+
     cursor = conn.cursor()
+
     query = f"UPDATE hospital.consulta SET {field} = %s WHERE idconsulta = %s"
     
     start_time = time.time()
@@ -125,12 +143,14 @@ def update_consulta_field(idconsulta, field, value):
     conn.commit()
     end_time = time.time()
     
-    conn.close()
+    cursor.close()
     
-    print(f"Tempo de execução da atualização: {end_time - start_time:.10f} segundos")
+    print(f"Tempo de execução da atualização: {end_time - start_time:.6f} segundos")
 
-def search_all_consults_by_cpf_normalizada(cpf):
-    conn = connect_to_database()
+def search_all_consults_by_cpf_normalizada(conn, cpf):
+    """
+    Busca todas as consultas de um paciente pelo CPF, juntando tabelas para obter dados completos.
+    """
     cursor = conn.cursor()
     query = """
     SELECT c.idconsulta, p.NomePac, m.NomeM, c.Data, m.CRM, e.NomeE
@@ -146,43 +166,23 @@ def search_all_consults_by_cpf_normalizada(cpf):
     result = cursor.fetchall()
     end_time = time.time()
     
-    conn.close()
+    cursor.close()
     
-    print(f"Tempo de execução da consulta: {end_time - start_time:.4f} segundos")
+    print(f"Tempo de execução da busca de histórico: {end_time - start_time:.4f} segundos")
     return result
 
-
-def search_all_consults_by_cpf(cpf):
-    conn = connect_to_database()
+def get_medicos(conn):
+    """Retorna uma lista de todos os médicos (CRM, NomeM)."""
     cursor = conn.cursor()
-    query = """
-    SELECT idconsulta, NomePac, NomeM, Data, CRM, NomeE,
-    FROM hospital.consulta_detalhada
-    WHERE CPF = %s
-    """
-    
-    start_time = time.time()
-    cursor.execute(query, (cpf,))
-    result = cursor.fetchall()
-    end_time = time.time()
-    
-    conn.close()
-    
-    print(f"Tempo de execução da consulta: {end_time - start_time:.4f} segundos")
-    return result
-
-def get_medicos():
-    conn = connect_to_database()
-    cursor = conn.cursor()
-    cursor.execute("SELECT CRM, NomeM FROM medico")
+    cursor.execute("SELECT CRM, NomeM FROM medico ORDER BY NomeM")
     medicos = cursor.fetchall()
-    conn.close()
+    cursor.close()
     return medicos
 
-def get_especialidades():
-    conn = connect_to_database()
+def get_especialidades(conn):
+    """Retorna uma lista de todas as especialidades (idEsp, NomeE)."""
     cursor = conn.cursor()
-    cursor.execute("SELECT idEsp, NomeE FROM especialidade")
+    cursor.execute("SELECT idEsp, NomeE FROM especialidade ORDER BY NomeE")
     especialidades = cursor.fetchall()
-    conn.close()
+    cursor.close()
     return especialidades
